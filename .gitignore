@@ -9,5 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# DataBase
+# DataBase and test 
 chemicals.db
+test.py
+__pycache__

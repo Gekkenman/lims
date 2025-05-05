@@ -1,42 +1,120 @@
-from sqlite3 import Cursor
+from sqlite3 import Cursor, connect
 
-def makeTables(db:"Cursor") -> None:
+def db_makeTables(db:"Cursor") -> None:
     # create chemicals table
     db.execute("""
-                CREATE TABLE chemicals (
-                    cas_nr TEXT,
-                    name TEXT,
-                    amount REAL,
-                    unit TEXT,
-                    pubchem_cid INT,
-                    PRIMARY KEY(cas_nr)
+                create table chemicals (
+                    id integer primary key,
+                    cas_nr text not null unique,
+                    name text not null unique,
+                    amount real default 0,
+                    unit text not null check (unit in ('g', 'kg', 'mg', 'ml', 'l')),
+                    pubchem_cid int unique
                 )
                """)
 
-    # create persons table
+    # create users table
     db.execute("""
-                CREATE TABLE persons (
-                    user_name TEXT,
-                    first_name TEXT,
-                    last_name TEXT,
-                    PRIMARY KEY(user_name)
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY,
+                    user_name TEXT NOT NULL UNIQUE,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    hash TEXT NOT NULL UNIQUE
                 )
                """)
 
     # create logs table
     db.execute("""
                 CREATE TABLE logs (
-                    id INTEGER,
-                    chemicals_cas_nr TEXT,
-                    persons_user_name TEXT,
+                    id INTEGER PRIMARY KEY,
+                    chemicals_id TEXT,
+                    users_id TEXT,
                     amount INTEGER,
-                    unite TEXT,
-                    change TEXT,
-                    date NUMERIC,
-                    time NUMERIC,
-                    PRIMARY KEY(id),
-                    FOREIGN KEY(chemicals_cas_nr) REFERENCES chemicals(cas_nr),
-                    FOREIGN KEY(persons_user_name) REFERENCES persons(id)
+                    unit TEXT CHECK (unit IN ('g', 'kg', 'mg', 'ml', 'l')),
+                    change TEXT CHECK (change IN ('add', 'remove')),
+                    date NUMERIC CURRENT_DATE,
+                    time NUMERIC CURRENT_TIME,
+                    FOREIGN KEY(chemicals_id) REFERENCES chemicals(id),
+                    FOREIGN KEY(users_id) REFERENCES users(id)
                 )
                """)
     return
+
+def db_get_hash_from_user(db:"Cursor", user_name:"str") -> list:
+    return db.execute("SELECT hash FROM users WHERE user_name = ?", user_name).fetchall()
+
+def db_register_user(db:"Cursor", user_name:"str", first_name:"str", last_name:"str", hash:"str") -> None:
+    db.execute("INSERT INTO users (user_name, first_name, last_name, hash) VALUES (?, ?, ?, ?)", (user_name, first_name, last_name, hash))
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
