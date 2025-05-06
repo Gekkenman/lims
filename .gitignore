@@ -10,6 +10,6 @@ wheels/
 .venv
 
 # DataBase and test 
-chemicals.db
+lims.db
 test.py
 __pycache__
