@@ -1,43 +1,82 @@
 import sqlite3
 from argon2 import PasswordHasher
 from getpass import getpass
-from util import *
-from typing import List, Dict
+from db_util import *
+from typing import List, Dict, Tuple
+
+LOGEDIN = False
 
 def main() -> int:
     # connect to database
     con = sqlite3.connect("lims.db")
 
-    # set autocommit on becouse it's a small app (and in dont want to deal with transactions)
+    # set autocommit on becouse it"s a small app (and in dont want to deal with transactions)
     con.autocommit = True
     db = con.cursor()
+    ph = PasswordHasher()
 
     # initialize the db if ther is no data
     if not db.execute("SELECT * FROM sqlite_master").fetchall():
         db_makeTables(db)
-        
+    
+    #TODO: Add welkome text
+    #TODO: List user options what to do
+    #TODO: login / register
+    #TODO: show_stock 
+    #TODO: show logs can filter logs on [date, time, person, chemical]
+    # needs to be logd in to do the following things
+    #TODO: add_chemicals
+    #TODO: remove_chemicals 
+    #TODO: add_stock
+    #TODO: remove_stock
+    #TODO: import cvs
+    #TODO: admin that can do following things but add name of other user
+    # api stuff
+    #TODO: request info of chemical with api of pubchem
     # ask to login
-    register_user(db)
+    first_name, last_name = login(db, ph)
+    print(first_name, last_name)
     return 0
 
+#TODO: Add color massege when somthing goes wrong and succces massege when they log in
+def login(db:sqlite3.Cursor, ph:PasswordHasher) -> Tuple[str, str]:
+    while True:
+        user_name = input("Enter your username: ")
+        pw = getpass("Enter your password: ")
 
-def register_user(db:"Cursor") -> None:
-    data = {}
+        # check if user name exist
+        if not check_user_exist(db, user_name):
+            print("User name or password is wrong please try again")
+            continue
 
+        # check if password is correct
+        first_name, last_name, hash = db_get_user_info(db, user_name)
+        if not ph.verify(hash, pw):
+            print("User name or password is wrong please try again")
+            continue
+
+        if ph.check_needs_rehash(hash):
+            db_set_hash_for_user(db, user_name, ph.hash(pw))
+        LOGEDIN = True
+        return (first_name, last_name)
+
+
+
+#TODO: Add color massege when somthing goes wrong and succces massege when they log in
+def register_user(db:sqlite3.Cursor, ph:PasswordHasher) -> None:
     # get user name and check if it is unique
-    data["user_name"] = get_user_name(db)
+    user_name = register_user_name(db)
     
     # get first and last name
-    data["first_name"] = get_first_name()
-    data["last_name"] = get_last_name()
+    first_name = get_first_name()
+    last_name = get_last_name()
 
     # get password and hash it
-    ph = PasswordHasher()
-    data["hash"] = ph.hash(get_password())
+    hash = ph.hash(get_password())
 
     # Ask for conformation
     while True:
-        print(f"\nYou have enterd:\n(1) User name:  {data['user_name']}\n(2) First name: {data['first_name']}\n(3) Last name:  {data['last_name']}\n\nEnter the number ( ) for editing else to confirm press enter:")
+        print(f"\nYou have enterd:\n(1) User name:  {user_name}\n(2) First name: {first_name}\n(3) Last name:  {last_name}\n\nEnter the number ( ) for editing else to confirm press enter:")
         option = input()
 
         # check input
@@ -50,31 +89,40 @@ def register_user(db:"Cursor") -> None:
         # check options
         if not option:
             # Put data in db
-            db_register_user(db, data["user_name"], data["first_name"], data["last_name"], data["hash"])
+            db_register_user(db, user_name, first_name, last_name, hash)
             return
         elif option == "1":
-            data["user_name"] = get_user_name(db)
+            register_user_name(db)
         elif option == "2":
-            data["first_name"] = get_first_name()
+            first_name = get_first_name()
         elif option == "3":
-            data["last_name"] = get_last_name()
+            last_name = get_last_name()
 
-def get_user_name(db) -> "str":
-    while True:
-        user_name = input("Enter your username: ")
-        if not db.execute("SELECT user_name FROM users WHERE user_name = ?", [user_name]).fetchall():
-            break
-        else:
-            user_name = input("Username already exist please enter a unique username: ")
-    return user_name
 
-def get_first_name() -> "str":
+def get_user_name() -> str:
+    return input("Enter your username: ")
+
+def get_first_name() -> str:
     return input("Enter your first_name: ")
 
-def get_last_name() -> "str":
+def get_last_name() -> str:
     return input("Enter your last_name: ")
 
-def get_password() -> "str":
+def check_user_exist(db: sqlite3.Cursor, user_name: str) -> bool:
+    return True if db_get_username(db, user_name) else False
+
+# NOTE: function needs bether naem
+def register_user_name(db: sqlite3.Cursor) -> str:
+    user_name = get_user_name()
+    while True:
+        if check_user_exist(db, user_name):
+            user_name = input("Username already exist please enter unique user name: ")
+            continue
+        else:
+            break
+    return user_name
+
+def get_password() -> str:
     while True:
         while True:
             pw = getpass("Enter your password: ")

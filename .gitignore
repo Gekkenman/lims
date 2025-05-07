@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# DataBase and test 
 lims.db
 test.py
+test/
 __pycache__

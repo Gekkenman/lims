@@ -1,6 +1,7 @@
 from sqlite3 import Cursor, connect
+from typing import Tuple
 
-def db_makeTables(db:"Cursor") -> None:
+def db_makeTables(db:Cursor) -> None:
     # create chemicals table
     db.execute("""
                 create table chemicals (
@@ -41,77 +42,18 @@ def db_makeTables(db:"Cursor") -> None:
                """)
     return
 
-def db_get_hash_from_user(db:"Cursor", user_name:"str") -> list:
-    return db.execute("SELECT hash FROM users WHERE user_name = ?", user_name).fetchall()
-
-def db_register_user(db:"Cursor", user_name:"str", first_name:"str", last_name:"str", hash:"str") -> None:
+def db_register_user(db:Cursor, user_name:str, first_name:str, last_name:str, hash:str) -> None:
     db.execute("INSERT INTO users (user_name, first_name, last_name, hash) VALUES (?, ?, ?, ?)", (user_name, first_name, last_name, hash))
     return
 
+def db_get_username(db:Cursor, user_name:str) -> Tuple[str]:
+    return db.execute("SELECT user_name FROM users WHERE user_name = ?", [user_name]).fetchone()
 
+def db_get_user_info(db:Cursor, user_name:str) -> Tuple[str, str, str]:
+    return db.execute("SELECT first_name, last_name, hash FROM users WHERE user_name = ?", [user_name]).fetchone()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def db_set_hash_for_user(db:Cursor, user_name:str, hash:str) -> None:
+    db.execute("UPDATE users SET hash = ? WHERE user_name = ?", [hash, user_name])
 
 
 
